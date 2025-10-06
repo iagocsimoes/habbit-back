@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Plan {
+  PRO
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  passwordHash    String   @map("password_hash")
+  name            String?
+  plan            Plan     @default(PRO)
+  role            Role     @default(USER)
+  shortcut        String   @default("Ctrl+Shift+Space")
+  correctionStyle String   @default("correct") @map("correction_style")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  corrections   Correction[]
+  subscription  Subscription?
+  analytics     Analytics[]
+
+  @@map("users")
+}
+
+model Correction {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  originalText  String   @db.Text @map("original_text")
+  correctedText String   @db.Text @map("corrected_text")
+  changes       Json?
+  language      String   @default("pt")
+  tokensUsed    Int      @default(0) @map("tokens_used")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("corrections")
+}
+
+model Subscription {
+  id                   String    @id @default(uuid())
+  userId               String    @unique @map("user_id")
+  stripeCustomerId     String?   @unique @map("stripe_customer_id")
+  stripeSubscriptionId String?   @unique @map("stripe_subscription_id")
+  plan                 Plan
+  status               String    // active, canceled, past_due, trialing
+  currentPeriodEnd     DateTime? @map("current_period_end")
+  cancelAtPeriodEnd    Boolean   @default(false) @map("cancel_at_period_end")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Analytics {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  event     String
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, event, createdAt])
+  @@map("analytics")
+}
+
+model PlanConfig {
+  id                String   @id @default(uuid())
+  name              String   @unique // PRO
+  displayName       String   @map("display_name") // "Plano PRO"
+  price             Decimal  @db.Decimal(10, 2) // 24.90
+  currency          String   @default("BRL")
+  monthlyLimit      Int      @map("monthly_limit") // 3000
+  stripePriceId     String?  @map("stripe_price_id")
+  active            Boolean  @default(true)
+  features          Json? // Lista de features em JSON
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("plan_configs")
+}
