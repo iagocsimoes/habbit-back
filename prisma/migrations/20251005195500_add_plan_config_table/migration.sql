@@ -2,7 +2,9 @@
 -- Remove values from Plan enum
 ALTER TYPE "Plan" RENAME TO "Plan_old";
 CREATE TYPE "Plan" AS ENUM ('PRO');
+ALTER TABLE "users" ALTER COLUMN "plan" DROP DEFAULT;
 ALTER TABLE "users" ALTER COLUMN "plan" TYPE "Plan" USING ("plan"::text::"Plan");
+ALTER TABLE "users" ALTER COLUMN "plan" SET DEFAULT 'PRO'::"Plan";
 ALTER TABLE "subscriptions" ALTER COLUMN "plan" TYPE "Plan" USING ("plan"::text::"Plan");
 DROP TYPE "Plan_old";
 

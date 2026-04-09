@@ -6,7 +6,7 @@ services:
     container_name: habbit-postgres
     restart: unless-stopped
     ports:
-      - '5432:5432'
+      - '5436:5432'
     environment:
       POSTGRES_USER: habbit
       POSTGRES_PASSWORD: habbit123
@@ -24,7 +24,7 @@ services:
     container_name: habbit-redis
     restart: unless-stopped
     ports:
-      - '6379:6379'
+      - '6382:6379'
     command: redis-server --requirepass habbit123
     volumes:
       - redis_data:/data
