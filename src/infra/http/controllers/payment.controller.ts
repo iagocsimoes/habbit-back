@@ -11,6 +11,7 @@ import {
   HttpStatus,
   UsePipes,
   ValidationPipe,
+  Logger,
 } from '@nestjs/common'
 import { Request } from 'express'
 import { CreateBillingUseCase } from '@/domain/application/use-cases/payment/create-billing'
@@ -25,6 +26,8 @@ import { CreateBillingPublicDto } from '../dtos/create-billing-public.dto'
 
 @Controller('payment')
 export class PaymentController {
+  private readonly logger = new Logger(PaymentController.name)
+
   constructor(
     private createBilling: CreateBillingUseCase,
     private createBillingPublic: CreateBillingPublicUseCase,
@@ -69,33 +72,28 @@ export class PaymentController {
     @Req() request: RawBodyRequest<Request>,
     @Headers('x-signature') signature: string,
   ) {
-    console.log('🌐 Webhook recebido!')
-    console.log('📝 Headers:', request.headers)
-    console.log('📦 Body:', request.body)
+    this.logger.log('Webhook received')
 
     if (!signature) {
-      console.log('❌ Faltando header x-signature')
       throw new BadRequestException('Missing x-signature header')
     }
 
     const rawBody = request.rawBody
     if (!rawBody) {
-      console.log('❌ Faltando raw body')
       throw new BadRequestException('Missing raw body')
     }
 
-    console.log('🔐 Verificando assinatura...')
     const event = this.abacatePayService.verifyWebhookSignature(
       rawBody.toString(),
       signature,
     )
 
     if (!event) {
-      console.log('❌ Assinatura inválida')
+      this.logger.warn('Invalid webhook signature')
       throw new BadRequestException('Invalid webhook signature')
     }
 
-    console.log('✅ Assinatura válida, processando evento:', event.kind)
+    this.logger.log(`Processing webhook event: ${event.kind}`)
     await this.handleAbacatePayWebhook.execute({ event })
 
     return { received: true }
