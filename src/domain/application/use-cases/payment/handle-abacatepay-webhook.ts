@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
+import { randomBytes } from 'crypto'
+import * as bcrypt from 'bcrypt'
 import { Either, right } from '@/core/types/either'
 import { PrismaService } from '@/infra/database/prisma/prisma.service'
 import { WebhookEvent } from '@/infra/payment/abacatepay.service'
@@ -12,6 +14,8 @@ type HandleAbacatePayWebhookUseCaseResponse = Either<null, { success: true }>
 
 @Injectable()
 export class HandleAbacatePayWebhookUseCase {
+  private readonly logger = new Logger(HandleAbacatePayWebhookUseCase.name)
+
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
@@ -44,13 +48,12 @@ export class HandleAbacatePayWebhookUseCase {
   }
 
   private async handleBillingPaid(billing: any) {
-    console.log('🔔 Webhook billing.paid recebido:', billing)
+    this.logger.log('Webhook billing.paid received')
 
     const userEmail = billing.metadata?.userId // Na verdade é o email
-    console.log('📧 Email do usuário:', userEmail)
 
     if (!userEmail) {
-      console.log('❌ Email não encontrado no metadata')
+      this.logger.warn('Email not found in billing metadata')
       return
     }
 
@@ -60,14 +63,12 @@ export class HandleAbacatePayWebhookUseCase {
     })
 
     let isNewUser = false
-    let randomPassword = ''
+    let generatedPassword = ''
 
     if (!user) {
-      console.log('✨ Criando novo usuário...')
-      // Criar usuário com senha aleatória
-      randomPassword = Math.random().toString(36).slice(-12)
-      const bcrypt = require('bcrypt')
-      const passwordHash = await bcrypt.hash(randomPassword, 10)
+      this.logger.log('Creating new user from billing')
+      generatedPassword = randomBytes(16).toString('base64url').slice(0, 16)
+      const passwordHash = await bcrypt.hash(generatedPassword, 10)
 
       user = await this.prisma.user.create({
         data: {
@@ -78,9 +79,9 @@ export class HandleAbacatePayWebhookUseCase {
       })
 
       isNewUser = true
-      console.log('✅ Usuário criado:', user.id)
+      this.logger.log(`New user created: ${user.id}`)
     } else {
-      console.log('👤 Usuário já existe:', user.id)
+      this.logger.log(`Existing user found: ${user.id}`)
     }
 
     // 2. Ativar ou criar assinatura
@@ -99,24 +100,20 @@ export class HandleAbacatePayWebhookUseCase {
       },
     })
 
-    console.log('✅ Assinatura ativada')
+    this.logger.log(`Subscription activated for user: ${user.id}`)
 
     // 3. Enviar email de boas-vindas apenas para novos usuários
     if (isNewUser) {
-      console.log('📤 Enviando email de boas-vindas...')
       try {
         await this.mailService.sendWelcomeEmail({
           to: userEmail,
           email: userEmail,
-          password: randomPassword,
+          password: generatedPassword,
         })
-        console.log('✅ Email enviado com sucesso!')
+        this.logger.log(`Welcome email sent for user: ${user.id}`)
       } catch (error) {
-        console.error('❌ Failed to send welcome email:', error)
-        // Não falhar o webhook se o email falhar
+        this.logger.error(`Failed to send welcome email for user: ${user.id}`, error instanceof Error ? error.stack : undefined)
       }
-    } else {
-      console.log('ℹ️ Usuário já existia, email não enviado')
     }
   }
 
