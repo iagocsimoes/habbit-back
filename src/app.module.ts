@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
+import { ThrottlerModule } from '@nestjs/throttler'
 import { envSchema } from './infra/env/env'
 import { EnvModule } from './infra/env/env.module'
 import { EnvService } from './infra/env/env.module'
@@ -24,6 +25,9 @@ import { AuthModule } from './infra/auth/auth.module'
           signOptions: { expiresIn: env.get('JWT_EXPIRES_IN') },
         }
       },
+    }),
+    ThrottlerModule.forRoot({
+      throttlers: [{ name: 'default', ttl: 60000, limit: 60 }],
     }),
     EnvModule,
     AuthModule,

@@ -11,6 +11,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common'
+import { Throttle } from '@nestjs/throttler'
 import { AuthenticateUserUseCase } from '@/domain/application/use-cases/auth/authenticate-user'
 import { RegisterUserUseCase } from '@/domain/application/use-cases/auth/register-user'
 import { UpdateUserShortcutUseCase } from '@/domain/application/use-cases/user/update-user-shortcut'
@@ -39,6 +40,7 @@ export class AuthController {
 
   @Post('login')
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   async login(@Body() body: AuthenticateDto) {
     const { email, password } = body
