@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import axios, { AxiosInstance } from 'axios'
+import { createHmac, timingSafeEqual } from 'crypto'
 import { EnvService } from '../env/env.module'
 
 export interface CreateBillingResponse {
@@ -112,14 +113,18 @@ export class AbacatePayService {
       throw new Error('Webhook secret not configured')
     }
 
-    // Abacate Pay usa HMAC SHA256
-    const crypto = require('crypto')
-    const expectedSignature = crypto
-      .createHmac('sha256', webhookSecret)
+    const expectedSignature = createHmac('sha256', webhookSecret)
       .update(payload)
       .digest('hex')
 
-    if (signature !== expectedSignature) {
+    if (signature.length !== expectedSignature.length) {
+      return null
+    }
+
+    const sigBuffer = Buffer.from(signature, 'utf-8')
+    const expectedBuffer = Buffer.from(expectedSignature, 'utf-8')
+
+    if (!timingSafeEqual(sigBuffer, expectedBuffer)) {
       return null
     }
 
