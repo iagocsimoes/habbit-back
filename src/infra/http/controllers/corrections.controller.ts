@@ -145,10 +145,12 @@ export class CorrectionsController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('perPage', new DefaultValuePipe(20), ParseIntPipe) perPage: number,
   ) {
+    const clampedPerPage = Math.min(Math.max(perPage, 1), 100)
+
     const result = await this.listUserCorrections.execute({
       userId: user.sub,
       page,
-      perPage,
+      perPage: clampedPerPage,
     })
 
     if (result.isLeft()) {
