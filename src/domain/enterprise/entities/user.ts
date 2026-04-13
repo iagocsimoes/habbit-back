@@ -17,6 +17,8 @@ export interface UserProps {
   plan: UserPlan
   role: UserRole
   shortcut: string
+  voiceShortcut: string
+  summaryShortcut: string
   correctionStyle: string
   createdAt: Date
   updatedAt: Date
@@ -47,6 +49,14 @@ export class User extends AggregateRoot<UserProps> {
     return this.props.shortcut
   }
 
+  get voiceShortcut() {
+    return this.props.voiceShortcut
+  }
+
+  get summaryShortcut() {
+    return this.props.summaryShortcut
+  }
+
   get correctionStyle() {
     return this.props.correctionStyle
   }
@@ -74,6 +84,16 @@ export class User extends AggregateRoot<UserProps> {
     this.touch()
   }
 
+  set voiceShortcut(voiceShortcut: string) {
+    this.props.voiceShortcut = voiceShortcut
+    this.touch()
+  }
+
+  set summaryShortcut(summaryShortcut: string) {
+    this.props.summaryShortcut = summaryShortcut
+    this.touch()
+  }
+
   set correctionStyle(style: string) {
     this.props.correctionStyle = style
     this.touch()
@@ -92,6 +112,8 @@ export class User extends AggregateRoot<UserProps> {
         plan: props.plan ?? UserPlan.PRO,
         role: props.role ?? UserRole.USER,
         shortcut: props.shortcut ?? 'Ctrl+Shift+Space',
+        voiceShortcut: props.voiceShortcut ?? 'Ctrl+Shift+V',
+        summaryShortcut: props.summaryShortcut ?? 'Ctrl+Shift+S',
         correctionStyle: props.correctionStyle ?? 'correct',
         createdAt: props.createdAt ?? new Date(),
         updatedAt: props.updatedAt ?? new Date(),

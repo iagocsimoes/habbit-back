@@ -15,10 +15,14 @@ import { Throttle } from '@nestjs/throttler'
 import { AuthenticateUserUseCase } from '@/domain/application/use-cases/auth/authenticate-user'
 import { RegisterUserUseCase } from '@/domain/application/use-cases/auth/register-user'
 import { UpdateUserShortcutUseCase } from '@/domain/application/use-cases/user/update-user-shortcut'
+import { UpdateVoiceShortcutUseCase } from '@/domain/application/use-cases/user/update-voice-shortcut'
+import { UpdateSummaryShortcutUseCase } from '@/domain/application/use-cases/user/update-summary-shortcut'
 import { UpdateCorrectionStyleUseCase } from '@/domain/application/use-cases/user/update-correction-style'
 import { AuthenticateDto } from '../dtos/authenticate.dto'
 import { RegisterDto } from '../dtos/register.dto'
 import { UpdateShortcutDto } from '../dtos/update-shortcut.dto'
+import { UpdateVoiceShortcutDto } from '../dtos/update-voice-shortcut.dto'
+import { UpdateSummaryShortcutDto } from '../dtos/update-summary-shortcut.dto'
 import { UpdateCorrectionStyleDto } from '../dtos/update-correction-style.dto'
 import { WrongCredentialsError } from '@/domain/application/use-cases/auth/errors/wrong-credentials-error'
 import { UserAlreadyExistsError } from '@/domain/application/use-cases/auth/errors/user-already-exists-error'
@@ -34,6 +38,8 @@ export class AuthController {
     private authenticateUser: AuthenticateUserUseCase,
     private registerUser: RegisterUserUseCase,
     private updateUserShortcut: UpdateUserShortcutUseCase,
+    private updateVoiceShortcut: UpdateVoiceShortcutUseCase,
+    private updateSummaryShortcut: UpdateSummaryShortcutUseCase,
     private updateCorrectionStyle: UpdateCorrectionStyleUseCase,
     private userRepository: UserRepository,
   ) {}
@@ -126,6 +132,8 @@ export class AuthController {
         plan: currentUser.plan,
         role: currentUser.role,
         shortcut: currentUser.shortcut,
+        voiceShortcut: currentUser.voiceShortcut,
+        summaryShortcut: currentUser.summaryShortcut,
         correctionStyle: currentUser.correctionStyle,
         createdAt: currentUser.createdAt,
       },
@@ -154,6 +162,54 @@ export class AuthController {
     }
 
     return { message: 'Shortcut updated successfully' }
+  }
+
+  @Put('voice-shortcut')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async updateVoiceShortcutEndpoint(
+    @CurrentUser() user: UserPayload,
+    @Body() body: UpdateVoiceShortcutDto,
+  ) {
+    const result = await this.updateVoiceShortcut.execute({
+      userId: user.sub,
+      voiceShortcut: body.voiceShortcut,
+    })
+
+    if (result.isLeft()) {
+      const error = result.value
+
+      if (error instanceof ResourceNotFoundError) {
+        throw new NotFoundException('User not found')
+      }
+
+      throw new UnauthorizedException()
+    }
+
+    return { message: 'Voice shortcut updated successfully' }
+  }
+
+  @Put('summary-shortcut')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async updateSummaryShortcutEndpoint(
+    @CurrentUser() user: UserPayload,
+    @Body() body: UpdateSummaryShortcutDto,
+  ) {
+    const result = await this.updateSummaryShortcut.execute({
+      userId: user.sub,
+      summaryShortcut: body.summaryShortcut,
+    })
+
+    if (result.isLeft()) {
+      const error = result.value
+
+      if (error instanceof ResourceNotFoundError) {
+        throw new NotFoundException('User not found')
+      }
+
+      throw new UnauthorizedException()
+    }
+
+    return { message: 'Summary shortcut updated successfully' }
   }
 
   @Put('correction-style')

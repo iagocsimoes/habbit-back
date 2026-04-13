@@ -27,6 +27,8 @@ model User {
   plan            Plan     @default(PRO)
   role            Role     @default(USER)
   shortcut        String   @default("Ctrl+Shift+Space")
+  voiceShortcut   String   @default("Ctrl+Shift+V") @map("voice_shortcut")
+  summaryShortcut String   @default("Ctrl+Shift+S") @map("summary_shortcut")
   correctionStyle String   @default("correct") @map("correction_style")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")

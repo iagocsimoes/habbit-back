@@ -6,6 +6,17 @@ export interface CorrectionResult {
   tokensUsed: number
 }
 
+export interface TranscriptionResult {
+  text: string
+  language: string
+  duration: number
+}
+
+export interface SummaryResult {
+  summary: string
+  tokensUsed: number
+}
+
 export abstract class AIProvider {
   abstract correctText(
     text: string,
@@ -18,4 +29,15 @@ export abstract class AIProvider {
     language: string,
     correctionStyle?: string,
   ): AsyncIterable<string>
+
+  abstract transcribeAudio(
+    audioBuffer: Buffer,
+    language?: string,
+  ): Promise<TranscriptionResult>
+
+  abstract summarizeText(
+    text: string,
+    language: string,
+    style?: string,
+  ): Promise<SummaryResult>
 }

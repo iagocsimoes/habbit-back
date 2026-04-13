@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common'
-import OpenAI from 'openai'
+import OpenAI, { toFile } from 'openai'
 import {
   AIProvider,
   CorrectionResult,
+  TranscriptionResult,
+  SummaryResult,
 } from '@/domain/application/providers/ai-provider'
 import { EnvService } from '../env/env.module'
 
@@ -89,6 +91,82 @@ IMPORTANTE: Retorne APENAS o texto corrigido/ajustado, sem nenhuma explicação 
       correctedText,
       tokensUsed,
     }
+  }
+
+  async transcribeAudio(
+    audioBuffer: Buffer,
+    language = 'pt',
+  ): Promise<TranscriptionResult> {
+    const file = await toFile(audioBuffer, 'audio.webm', {
+      type: 'audio/webm',
+    })
+
+    const transcription = await this.openai.audio.transcriptions.create({
+      file,
+      model: 'whisper-1',
+      language,
+      response_format: 'verbose_json',
+    })
+
+    return {
+      text: transcription.text,
+      language: transcription.language ?? language,
+      duration: transcription.duration ?? 0,
+    }
+  }
+
+  async summarizeText(
+    text: string,
+    language: string,
+    style = 'bullets',
+  ): Promise<SummaryResult> {
+    const languageMap: Record<string, string> = {
+      pt: 'português',
+      en: 'inglês',
+      es: 'espanhol',
+    }
+
+    const languageName = languageMap[language] || 'português'
+
+    const styleInstructions: Record<string, string> = {
+      bullets: `Resuma o texto em tópicos (bullet points) claros e objetivos.
+- Use no máximo 7 tópicos
+- Cada tópico deve ser uma frase curta e direta`,
+      paragraph: `Resuma o texto em um único parágrafo conciso.
+- Mantenha as informações mais importantes
+- Use no máximo 3-4 frases`,
+      oneline: `Resuma o texto em uma única frase.
+- Capture a essência principal
+- Seja extremamente conciso`,
+      detailed: `Faça um resumo detalhado do texto.
+- Organize por seções se necessário
+- Mantenha os pontos principais e secundários
+- Use no máximo 10 tópicos`,
+    }
+
+    const styleInstruction =
+      styleInstructions[style] || styleInstructions.bullets
+
+    const completion = await this.openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `Você é um especialista em resumir textos em ${languageName}. Retorne apenas o resumo, sem explicações.`,
+        },
+        {
+          role: 'user',
+          content: `${styleInstruction}\n\nTexto:\n${text}`,
+        },
+      ],
+      temperature: 0.2,
+      max_tokens: 1000,
+    })
+
+    const summary = completion.choices[0]?.message?.content?.trim() || ''
+    const tokensUsed = completion.usage?.total_tokens || 0
+
+    return { summary, tokensUsed }
   }
 
   async *correctTextStream(

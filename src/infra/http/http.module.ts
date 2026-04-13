@@ -2,9 +2,13 @@ import { Module } from '@nestjs/common'
 import { AuthController } from './controllers/auth.controller'
 import { CorrectionsController } from './controllers/corrections.controller'
 import { PaymentController } from './controllers/payment.controller'
+import { TranscriptionsController } from './controllers/transcriptions.controller'
+import { SummariesController } from './controllers/summaries.controller'
 import { AuthenticateUserUseCase } from '@/domain/application/use-cases/auth/authenticate-user'
 import { RegisterUserUseCase } from '@/domain/application/use-cases/auth/register-user'
 import { UpdateUserShortcutUseCase } from '@/domain/application/use-cases/user/update-user-shortcut'
+import { UpdateVoiceShortcutUseCase } from '@/domain/application/use-cases/user/update-voice-shortcut'
+import { UpdateSummaryShortcutUseCase } from '@/domain/application/use-cases/user/update-summary-shortcut'
 import { UpdateCorrectionStyleUseCase } from '@/domain/application/use-cases/user/update-correction-style'
 import { CorrectTextUseCase } from '@/domain/application/use-cases/corrections/correct-text'
 import { CorrectTextStreamUseCase } from '@/domain/application/use-cases/corrections/correct-text-stream'
@@ -15,6 +19,9 @@ import { DeleteCorrectionUseCase } from '@/domain/application/use-cases/correcti
 import { CreateBillingUseCase } from '@/domain/application/use-cases/payment/create-billing'
 import { CreateBillingPublicUseCase } from '@/domain/application/use-cases/payment/create-billing-public'
 import { HandleAbacatePayWebhookUseCase } from '@/domain/application/use-cases/payment/handle-abacatepay-webhook'
+import { SummarizeTextUseCase } from '@/domain/application/use-cases/summaries/summarize-text'
+import { TranscribeAudioUseCase } from '@/domain/application/use-cases/transcriptions/transcribe-audio'
+import { TranscribeAndCorrectUseCase } from '@/domain/application/use-cases/transcriptions/transcribe-and-correct'
 import { DatabaseModule } from '../database/database.module'
 import { CryptographyModule } from '../cryptography/cryptography.module'
 import { AIModule } from '../ai/ai.module'
@@ -23,11 +30,13 @@ import { MailModule } from '../mail/mail.module'
 
 @Module({
   imports: [DatabaseModule, CryptographyModule, AIModule, PaymentModule, MailModule],
-  controllers: [AuthController, CorrectionsController, PaymentController],
+  controllers: [AuthController, CorrectionsController, PaymentController, TranscriptionsController, SummariesController],
   providers: [
     AuthenticateUserUseCase,
     RegisterUserUseCase,
     UpdateUserShortcutUseCase,
+    UpdateVoiceShortcutUseCase,
+    UpdateSummaryShortcutUseCase,
     UpdateCorrectionStyleUseCase,
     CorrectTextUseCase,
     CorrectTextStreamUseCase,
@@ -38,6 +47,9 @@ import { MailModule } from '../mail/mail.module'
     CreateBillingUseCase,
     CreateBillingPublicUseCase,
     HandleAbacatePayWebhookUseCase,
+    SummarizeTextUseCase,
+    TranscribeAudioUseCase,
+    TranscribeAndCorrectUseCase,
   ],
 })
 export class HttpModule {}
